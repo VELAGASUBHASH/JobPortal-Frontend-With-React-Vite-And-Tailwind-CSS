@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../services/api"; // Centralized API with automatic JWT injection
+import { api } from "../Services/api"; // Centralized API with automatic JWT injection
 
 // ─── Status Config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
