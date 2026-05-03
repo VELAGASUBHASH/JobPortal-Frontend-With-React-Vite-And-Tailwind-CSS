@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-
-const API = "http://localhost:8080";
-const token = () => localStorage.getItem("jwt");
-const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${token()}` });
+import { api } from "../services/api"; // Centralized API with automatic JWT injection
 
 // ─── Status Config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -33,13 +30,15 @@ function AppCard({ app, idx }) {
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 flex items-center justify-center text-xl shrink-0">
-                            {["💼", "🚀", "🏢", "⚡", "🌐"][app.id % 5]}
+                            {["💼", "🚀", "🏢", "⚡", "🌐"][(app.id || 0) % 5]}
                         </div>
                         <div>
                             <h3 className="text-white font-black text-base leading-tight" style={{ fontFamily: "'Syne',sans-serif" }}>
-                                {app.job?.title || app.jobTitle || "Software Engineer"}
+                                {/* Updated to use job.title from backend */}
+                                {app.job?.title || "Software Engineer"}
                             </h3>
-                            <p className="text-slate-500 text-sm">{app.job?.companyName || "Company"} · {app.job?.location || "Remote"}</p>
+                            {/* Updated to use job.company from backend */}
+                            <p className="text-slate-500 text-sm">{app.job?.company || "Company"} · {app.job?.location || "Remote"}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border"
@@ -89,8 +88,9 @@ function AppCard({ app, idx }) {
                 {/* Footer row */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-slate-500 text-xs">
-                        <span>💰 {app.job?.salary ? `₹${app.job.salary} LPA` : "₹12–25 LPA"}</span>
-                        <span>📅 {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString("en-IN") : "Today"}</span>
+                        <span>💰 {app.job?.salary ? `₹${app.job.salary.toLocaleString()}` : "Negotiable"}</span>
+                        {/* Fallback appliedAt text if backend doesn't track timestamp natively */}
+                        <span>📅 {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString("en-IN") : "Recently"}</span>
                     </div>
                     <button onClick={() => setExpanded(!expanded)}
                             className="text-indigo-400 text-xs font-semibold hover:text-indigo-300 transition-colors flex items-center gap-1">
@@ -105,7 +105,7 @@ function AppCard({ app, idx }) {
                             {app.job?.description || "Work on exciting projects with a world-class engineering team."}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                            {(app.job?.skills || ["React", "Node.js"]).map((s, i) => (
+                            {(app.job?.requiredSkills || app.job?.skills || ["Java", "Spring Boot", "Docker"]).map((s, i) => (
                                 <span key={i} className="px-2.5 py-1 text-xs font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">{s}</span>
                             ))}
                         </div>
@@ -150,17 +150,13 @@ export default function UserDashboard() {
 
     const fetchApplications = async () => {
         try {
-            const res = await fetch(`${API}/user/application`, { headers: authHeaders() });
-            const data = await res.json();
-            setApplications(Array.isArray(data) ? data : []);
-        } catch {
-            // demo fallback
-            setApplications([
-                { id: 1, jobTitle: "Senior React Developer", applicationStatus: "SHORTLISTED", appliedAt: "2026-04-25", job: { title: "Senior React Developer", companyName: "Google", location: "Hyderabad", salary: "28–40", skills: ["React", "TypeScript", "GraphQL"], description: "Build amazing UIs." } },
-                { id: 2, jobTitle: "Java Spring Boot Engineer", applicationStatus: "APPLIED", appliedAt: "2026-04-28", job: { title: "Java Spring Boot Engineer", companyName: "Amazon", location: "Bangalore", salary: "22–35", skills: ["Java", "Spring Boot", "Kafka"], description: "Design scalable microservices." } },
-                { id: 3, jobTitle: "Full Stack Developer", applicationStatus: "HIRED", appliedAt: "2026-04-20", job: { title: "Full Stack Developer", companyName: "TCS Digital", location: "Chennai", salary: "18–28", skills: ["React", "Node.js", "MongoDB"], description: "Work across the full stack." } },
-                { id: 4, jobTitle: "DevOps Engineer", applicationStatus: "REJECTED", appliedAt: "2026-04-15", job: { title: "DevOps Engineer", companyName: "Microsoft", location: "Remote", salary: "25–38", skills: ["Kubernetes", "Terraform", "Azure"], description: "Automate cloud infra." } },
-            ]);
+            // Using the api instance to automatically attach the JWT and hit Render
+            const res = await api.get('/user/application');
+            setApplications(Array.isArray(res.data) ? res.data : []);
+        } catch (error) {
+            console.error("Failed to fetch applications:", error);
+            // Replaced dummy data with an empty state fallback
+            setApplications([]);
         } finally {
             setLoading(false);
         }

@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom"; // Added for routing
+import { api } from "../services/api"; // Added for backend connection
+import toast from "react-hot-toast"; // Added for popups
 
 // ─── Particle Canvas ──────────────────────────────────────────────────────────
 function ParticleCanvas() {
@@ -184,7 +187,7 @@ function StepIndicator({ step }) {
 
 // ─── Main Register ────────────────────────────────────────────────────────────
 function Register() {
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(1); // 1 = Details, 2 = Password
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -196,6 +199,8 @@ function Register() {
     const [errors, setErrors] = useState({});
     const [visible, setVisible] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const link = document.createElement("link");
@@ -218,12 +223,12 @@ function Register() {
 
     const validateStep = () => {
         const errs = {};
-        if (step === 2) {
+        if (step === 1) { // Validate Step 1 (Details)
             if (!name.trim()) errs.name = "Full name is required";
             if (!email.trim()) errs.email = "Email is required";
             else if (!/\S+@\S+\.\S+/.test(email)) errs.email = "Enter a valid email";
         }
-        if (step === 3) {
+        if (step === 2) { // Validate Step 2 (Password)
             if (password.length < 8) errs.password = "Minimum 8 characters";
             if (password !== confirm) errs.confirm = "Passwords don't match";
             if (!agree) errs.agree = "Please accept the terms";
@@ -235,11 +240,23 @@ function Register() {
     const nextStep = () => { if (validateStep()) setStep((s) => s + 1); };
     const prevStep = () => { setStep((s) => s - 1); setErrors({}); };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateStep()) return;
+
         setLoading(true);
-        setTimeout(() => setLoading(false), 2000);
+        try {
+            // Hit your Spring Boot backend's register endpoint
+            await api.post('/auth/register', { name, email, password });
+
+            toast.success("Account created! Please check your email to verify.", { duration: 5000 });
+            navigate("/login"); // Send them to login page after success
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || error.response?.data || "Registration failed. Try again.";
+            toast.error(errorMsg);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -383,18 +400,16 @@ function Register() {
                             {/* ── STEP CONTENT ── */}
                             <form onSubmit={handleSubmit}>
 
-
-
-                                {/* Step 2: Details */}
-                                {step === 2 && (
+                                {/* Step 1: Details */}
+                                {step === 1 && (
                                     <div className="animate-step">
                                         <FloatingInput type="text" label="Full Name" icon="👤" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
                                         <FloatingInput type="email" label="Email Address" icon="✉️" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
                                     </div>
                                 )}
 
-                                {/* Step 3: Password */}
-                                {step === 3 && (
+                                {/* Step 2: Password */}
+                                {step === 2 && (
                                     <div className="animate-step">
                                         <FloatingInput
                                             type="password" label="Create Password" icon="🔒"
@@ -452,7 +467,7 @@ function Register() {
                                         </button>
                                     )}
 
-                                    {step < 3 ? (
+                                    {step < 2 ? (
                                         <button
                                             type="button"
                                             onClick={nextStep}
@@ -499,9 +514,9 @@ function Register() {
                             {/* Footer */}
                             <p className="text-center text-slate-500 text-sm mt-6 animate-slide-up d6">
                                 Already have an account?{" "}
-                                <a href="#" className="text-indigo-400 font-semibold hover:text-indigo-300 transition-colors duration-200 underline underline-offset-2 decoration-indigo-500/40">
+                                <Link to="/login" className="text-indigo-400 font-semibold hover:text-indigo-300 transition-colors duration-200 underline underline-offset-2 decoration-indigo-500/40">
                                     Sign in →
-                                </a>
+                                </Link>
                             </p>
 
                             {/* Trust row */}

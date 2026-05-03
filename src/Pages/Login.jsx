@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom"; // Added for routing
+import { useAuth } from "../Context/AuthContext.jsx";     // Added for backend authentication
+import toast from "react-hot-toast";                  // Added for error handling
 
-// ─── Particle Canvas (same as Hero) ──────────────────────────────────────────
+// ─── Particle Canvas ──────────────────────────────────────────
 function ParticleCanvas() {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -119,6 +122,10 @@ function Login() {
     const [visible, setVisible] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
+    // 1. Hook up Navigation and Authentication
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
     useEffect(() => {
         const link = document.createElement("link");
         link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap";
@@ -138,10 +145,26 @@ function Login() {
         transition: "transform 0.12s linear",
     });
 
-    const handleSubmit = (e) => {
+    // 2. The Real Submission Logic
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!email || !password) {
+            toast.error("Please enter both email and password.");
+            return;
+        }
+
         setLoading(true);
-        setTimeout(() => setLoading(false), 2000);
+
+        // Wait for the AuthContext to talk to your Spring Boot API
+        const success = await login(email, password);
+
+        setLoading(false);
+
+        // If the backend returned a JWT, redirect to the Jobs dashboard!
+        if (success) {
+            navigate("/");
+        }
     };
 
     return (
@@ -363,19 +386,19 @@ function Login() {
                                     />
                                     {loading ? (
                                         <span className="flex items-center justify-center gap-3">
-                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Signing you in…
-                    </span>
+                                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                            </svg>
+                                            Signing you in…
+                                        </span>
                                     ) : (
                                         <span className="flex items-center justify-center gap-2">
-                      Sign In
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </span>
+                                            Sign In
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                            </svg>
+                                        </span>
                                     )}
                                 </button>
                             </form>
@@ -383,20 +406,16 @@ function Login() {
                             {/* Footer */}
                             <p className="text-center text-slate-500 text-sm mt-6 animate-slide-up d7">
                                 Don't have an account?{" "}
-                                <a
-                                    href="#"
+                                {/* 3. Connect to React Router Register page */}
+                                <Link
+                                    to="/register"
                                     className="text-indigo-400 font-semibold hover:text-indigo-300 transition-colors duration-200 underline underline-offset-2 decoration-indigo-500/40"
                                 >
                                     Create one free →
-                                </a>
+                                </Link>
                             </p>
 
-                            {/* Trust badges */}
-                            <div className="flex items-center justify-center gap-6 mt-6 pt-6 border-t border-slate-800/60 animate-slide-up d7">
-                                {["🔐 SSL Secure", "✅ Verified", "🛡️ Private"].map((b) => (
-                                    <span key={b} className="text-slate-600 text-xs font-medium">{b}</span>
-                                ))}
-                            </div>
+
                         </div>
                     </div>
                 </div>

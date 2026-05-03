@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-
-const API = "http://localhost:8080";
-const token = () => localStorage.getItem("jwt");
-const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${token()}` });
+import { api } from "../services/api"; // Centralized API connection
+import { useAuth } from "../context/AuthContext"; // Optional: Use this if you want to verify admin status later
 
 const STATUS_OPTS = ["APPLIED", "SHORTLISTED", "HIRED", "REJECTED"];
 const STATUS_CFG = {
@@ -30,7 +28,8 @@ function Toast({ msg, type, onClose }) {
 
 // ─── Job Form Modal ───────────────────────────────────────────────────────────
 function JobModal({ job, onClose, onSave }) {
-    const [form, setForm] = useState(job || { title: "", companyName: "", location: "", description: "", salary: "", jobType: "Full-time", skills: "", jobStatus: "OPEN" });
+    // Note: Updated companyName to company to match the backend Job model
+    const [form, setForm] = useState(job || { title: "", company: "", location: "", description: "", salary: "", jobType: "Full-time", skills: "", jobStatus: "OPEN" });
     const [saving, setSaving] = useState(false);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -38,23 +37,29 @@ function JobModal({ job, onClose, onSave }) {
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Using your api instance for calls
             const payload = { ...form, requiredSkills: form.skills?.split(",").map(s => s.trim()).filter(Boolean) };
-            if (job?.id) {
-                const res = await fetch(`${API}/admin/job/${job.id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(payload) });
-                onSave(await res.json(), false);
+
+            if (job?.jobId) { // Updated to check for jobId instead of id
+                const res = await api.put(`/admin/job/${job.jobId}`, payload);
+                onSave(res.data, false);
             } else {
-                const res = await fetch(`${API}/admin/job/createJob`, { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
-                onSave(await res.json(), true);
+                const res = await api.post('/admin/job/createJob', payload);
+                onSave(res.data, true);
             }
-        } catch { onSave(form, job ? false : true); }
+        } catch (error) {
+            console.error("Save failed:", error);
+            // We pass null to indicate failure so the parent component doesn't update UI incorrectly
+            onSave(null, job ? false : true);
+        }
         finally { setSaving(false); onClose(); }
     };
 
     const fields = [
         { k: "title", label: "Job Title", type: "text", icon: "💼" },
-        { k: "companyName", label: "Company", type: "text", icon: "🏢" },
+        { k: "company", label: "Company", type: "text", icon: "🏢" }, // Changed key to 'company'
         { k: "location", label: "Location", type: "text", icon: "📍" },
-        { k: "salary", label: "Salary (e.g. 12–25 LPA)", type: "text", icon: "💰" },
+        { k: "salary", label: "Salary (e.g. 1200000)", type: "number", icon: "💰" }, // Changed to number type for numeric salary
         { k: "skills", label: "Skills (comma separated)", type: "text", icon: "🛠️" },
     ];
 
@@ -63,7 +68,7 @@ function JobModal({ job, onClose, onSave }) {
             <div className="modal-in w-full max-w-lg bg-gradient-to-br from-[#12142b] to-[#0e1022] border border-indigo-500/25 rounded-3xl p-7 shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_40px_rgba(99,102,241,0.08)] max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-black text-white" style={{ fontFamily: "'Syne',sans-serif" }}>
-                        {job?.id ? "✏️ Edit Job" : "➕ Create Job"}
+                        {job?.jobId ? "✏️ Edit Job" : "➕ Create Job"}
                     </h2>
                     <button onClick={onClose} className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all">×</button>
                 </div>
@@ -104,7 +109,7 @@ function JobModal({ job, onClose, onSave }) {
                     <button onClick={handleSave} disabled={saving}
                             className="flex-1 py-3.5 rounded-2xl font-bold text-white text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-60"
                             style={{ fontFamily: "'Syne',sans-serif" }}>
-                        {saving ? "Saving…" : job?.id ? "Update Job" : "Create Job"}
+                        {saving ? "Saving…" : job?.jobId ? "Update Job" : "Create Job"}
                     </button>
                 </div>
             </div>
@@ -115,11 +120,19 @@ function JobModal({ job, onClose, onSave }) {
 // ─── Job Row ──────────────────────────────────────────────────────────────────
 function JobRow({ job, onEdit, onDelete, onViewApps }) {
     const [deleting, setDeleting] = useState(false);
+
     const handleDelete = async () => {
         setDeleting(true);
-        try { await fetch(`${API}/admin/job/${job.id}`, { method: "DELETE", headers: authHeaders() }); }
-        catch {}
-        finally { setDeleting(false); onDelete(job.id); }
+        try {
+            // Using configured api instance
+            await api.delete(`/admin/job/${job.jobId}`);
+            onDelete(job.jobId);
+        } catch (error) {
+            console.error("Failed to delete", error);
+            // Should ideally trigger a toast error here
+        } finally {
+            setDeleting(false);
+        }
     };
 
     const sc = { OPEN: ["emerald"], CLOSED: ["rose"], PAUSED: ["amber"] }[job.jobStatus] || ["slate"];
@@ -131,7 +144,8 @@ function JobRow({ job, onEdit, onDelete, onViewApps }) {
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center text-lg shrink-0">💼</div>
                     <div>
                         <div className="text-white font-bold text-sm" style={{ fontFamily: "'Syne',sans-serif" }}>{job.title}</div>
-                        <div className="text-slate-500 text-xs">{job.companyName || "—"}</div>
+                        {/* Updated to display job.company */}
+                        <div className="text-slate-500 text-xs">{job.company || "—"}</div>
                     </div>
                 </div>
             </td>
@@ -141,7 +155,7 @@ function JobRow({ job, onEdit, onDelete, onViewApps }) {
           {job.jobStatus || "OPEN"}
         </span>
             </td>
-            <td className="py-4 px-4 text-slate-400 text-sm">{job.salary ? `₹${job.salary}` : "—"}</td>
+            <td className="py-4 px-4 text-slate-400 text-sm">{job.salary ? `₹${job.salary.toLocaleString()}` : "—"}</td>
             <td className="py-4 px-4">
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => onViewApps(job)}
@@ -172,23 +186,22 @@ function ApplicationsPanel({ job, onClose }) {
     useEffect(() => {
         const fetchApps = async () => {
             try {
-                const res = await fetch(`${API}/admin/Application/job/${job.id}`, { headers: authHeaders() });
-                setApps(await res.json());
+                // Using configured api instance, querying by jobId
+                const res = await api.get(`/admin/Application/job/${job.jobId}`);
+                setApps(Array.isArray(res.data) ? res.data : []);
             } catch {
-                setApps([
-                    { id: 1, user: { name: "Subhash V.", email: "subhash@email.com" }, applicationStatus: "APPLIED", appliedAt: "2026-04-25" },
-                    { id: 2, user: { name: "Arjun K.", email: "arjun@email.com" }, applicationStatus: "SHORTLISTED", appliedAt: "2026-04-26" },
-                    { id: 3, user: { name: "Priya S.", email: "priya@email.com" }, applicationStatus: "HIRED", appliedAt: "2026-04-22" },
-                ]);
+                // Fallback empty state if fetch fails
+                setApps([]);
             } finally { setLoading(false); }
         };
         fetchApps();
-    }, [job.id]);
+    }, [job.jobId]);
 
     const updateStatus = async (appId, status) => {
         setUpdating(appId);
         try {
-            await fetch(`${API}/admin/Application/${appId}?status=${status}`, { method: "PUT", headers: authHeaders() });
+            // Using configured api instance
+            await api.put(`/admin/Application/${appId}?status=${status}`);
             setApps(prev => prev.map(a => a.id === appId ? { ...a, applicationStatus: status } : a));
             setToast({ msg: `Status updated to ${status}`, type: "success" });
         } catch { setToast({ msg: "Failed to update", type: "error" }); }
@@ -286,30 +299,33 @@ export default function AdminDashboard() {
 
     const fetchAll = async () => {
         try {
-            const [jRes] = await Promise.all([
-                fetch(`${API}/admin/job/alljobs`, { headers: authHeaders() }),
-            ]);
-            setJobs(Array.isArray(await jRes.json()) ? await jRes.json() : demoJobs());
-        } catch { setJobs(demoJobs()); }
+            // Using configured api instance
+            const res = await api.get('/admin/job/alljobs');
+            setJobs(Array.isArray(res.data) ? res.data : []);
+        } catch {
+            // Fallback empty state
+            setJobs([]);
+        }
         finally { setLoading(false); }
     };
 
-    const demoJobs = () => [
-        { id: 1, title: "Senior React Developer", companyName: "Google", location: "Hyderabad", jobStatus: "OPEN", salary: "28–40", jobType: "Full-time" },
-        { id: 2, title: "Java Spring Boot Engineer", companyName: "Amazon", location: "Bangalore", jobStatus: "OPEN", salary: "22–35", jobType: "Full-time" },
-        { id: 3, title: "Full Stack Developer", companyName: "TCS Digital", location: "Chennai", jobStatus: "CLOSED", salary: "18–28", jobType: "Full-time" },
-        { id: 4, title: "DevOps Engineer", companyName: "Microsoft", location: "Remote", jobStatus: "OPEN", salary: "25–38", jobType: "Full-time" },
-        { id: 5, title: "Data Engineer", companyName: "Flipkart", location: "Bangalore", jobStatus: "PAUSED", salary: "20–32", jobType: "Full-time" },
-    ];
-
     const handleSave = (job, isNew) => {
-        if (isNew) setJobs(prev => [job, ...prev]);
-        else setJobs(prev => prev.map(j => j.id === job.id ? job : j));
+        if (!job) {
+            setToast({ msg: "Error saving job", type: "error" });
+            return;
+        }
+
+        if (isNew) {
+            setJobs(prev => [job, ...prev]);
+        } else {
+            // Update using jobId
+            setJobs(prev => prev.map(j => j.jobId === job.jobId ? job : j));
+        }
         setToast({ msg: isNew ? "Job created!" : "Job updated!", type: "success" });
     };
 
     const handleDelete = (id) => {
-        setJobs(prev => prev.filter(j => j.id !== id));
+        setJobs(prev => prev.filter(j => j.jobId !== id)); // Delete locally using jobId
         setToast({ msg: "Job deleted", type: "success" });
     };
 
@@ -336,7 +352,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-                {jobModal !== null && <JobModal job={jobModal?.id ? jobModal : null} onClose={() => setJobModal(null)} onSave={handleSave} />}
+                {/* Passing job based on jobId check */}
+                {jobModal !== null && <JobModal job={jobModal?.jobId ? jobModal : null} onClose={() => setJobModal(null)} onSave={handleSave} />}
                 {appsPanel && <ApplicationsPanel job={appsPanel} onClose={() => setAppsPanel(null)} />}
 
                 <div className="relative max-w-7xl mx-auto px-6 py-12" style={{ zIndex: 10 }}>
@@ -395,7 +412,8 @@ export default function AdminDashboard() {
                                         </thead>
                                         <tbody>
                                         {jobs.map(job => (
-                                            <JobRow key={job.id} job={job} onEdit={j => setJobModal(j)} onDelete={handleDelete} onViewApps={j => setAppsPanel(j)} />
+                                            // Ensure we use jobId as the key
+                                            <JobRow key={job.jobId} job={job} onEdit={j => setJobModal(j)} onDelete={handleDelete} onViewApps={j => setAppsPanel(j)} />
                                         ))}
                                         </tbody>
                                     </table>
