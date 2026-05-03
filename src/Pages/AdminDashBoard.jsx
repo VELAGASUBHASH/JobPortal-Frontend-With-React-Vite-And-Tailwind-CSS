@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../services/api"; // Centralized API connection
+import { api } from "../Services/api"; // Centralized API connection
 import { useAuth } from "../Context/AuthContext"; // Optional: Use this if you want to verify admin status later
 
 const STATUS_OPTS = ["APPLIED", "SHORTLISTED", "HIRED", "REJECTED"];
