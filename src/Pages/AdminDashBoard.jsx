@@ -468,7 +468,7 @@ export default function AdminDashboard() {
             // which doesn't make sense for a "get all" route. Using getApplicationsByJob
             // per job is the correct approach via the Applications Panel.
             // Adjust this URL if your backend has a dedicated global endpoint.
-            import("../services/api").then(({ api }) => {
+            import("../Services/api.js").then(({ api }) => {
                 api.get("/admin/Application/getAllApplication")
                     .then(res => setAllApps(Array.isArray(res.data) ? res.data : []))
                     .catch(() => setAllApps([]))
