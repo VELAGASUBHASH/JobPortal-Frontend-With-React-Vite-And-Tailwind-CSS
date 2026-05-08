@@ -144,11 +144,19 @@ function JobModal({ job, onClose, onSave }) {
         setFieldError("");
         setSaving(true);
         try {
+            // 🚨 THE FIX: Explicitly define the payload so we don't accidentally 
+            // send the nested `createdBy` User object back to Spring Boot!
             const payload = {
-                ...form,
+                title: form.title,
+                company: form.company,
+                location: form.location,
+                description: form.description,
+                jobType: form.jobType,
+                jobStatus: form.jobStatus,
                 salary: form.salary ? Number(form.salary) : null,
                 requiredSkills: form.skills?.split(",").map(s => s.trim()).filter(Boolean),
             };
+
             if (isEdit) {
                 // ✅ Uses adminJobAPI.updateJob()
                 const res = await adminJobAPI.updateJob(jobId(job), payload);
@@ -166,7 +174,6 @@ function JobModal({ job, onClose, onSave }) {
             onClose();
         }
     };
-
     const inputCls = "w-full px-4 py-3 rounded-2xl border border-slate-700/60 bg-white/3 text-white text-sm outline-none focus:border-indigo-500/50 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all placeholder-slate-600";
 
     return (
