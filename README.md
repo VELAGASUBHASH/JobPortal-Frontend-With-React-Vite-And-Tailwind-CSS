@@ -1,16 +1,36 @@
-# React + Vite
+# 🚀 RisePath - Job Portal (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A premium, high-performance job portal frontend built with React, Vite, and Tailwind CSS. It features a modern dark-mode aesthetic with interactive 3D animations, particle effects, and highly secure role-based dashboards for Users and Administrators.
 
-Currently, two official plugins are available:
+### 🔗 Live Links
+* **Frontend (Vercel):** [https://risepath-one.vercel.app](https://risepath-one.vercel.app)
+* **Backend API (Render):** [https://jobportalbackend-celm.onrender.com](https://jobportalbackend-celm.onrender.com)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## ✨ Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **Role-Based Routing:** Secure, protected routes that dynamically render User or Admin dashboards based on decoded JSON Web Tokens (JWT).
+* **Premium UI/UX:** Glassmorphism design, 3D hover effects, interactive particle canvas backgrounds, and smooth CSS keyframe animations.
+* **Admin Dashboard:** Full CRUD functionality to post, edit, and delete jobs. Includes a dedicated, dynamic modal to view applicants and update their hiring statuses.
+* **User Dashboard:** Intuitive job search and filtering, 1-click applications, and real-time application tracking.
+* **Seamless Authentication:** JWT-based login and registration with custom Context API state management and beautiful toast notifications.
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
+* **Core:** React.js 18, Vite
+* **Styling:** Tailwind CSS, Custom CSS Animations
+* **Routing:** React Router DOM v6
+* **Network & State:** Axios, React Context API
+* **UI Utilities:** React Hot Toast
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Getting Started
+
+### Prerequisites
+* Node.js (v16 or higher)
+* npm or yarn
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/VELAGASUBHASH/JobPortal-Frontend-With-React-Vite-And-Tailwind-CSS.git](https://github.com/VELAGASUBHASH/JobPortal-Frontend-With-React-Vite-And-Tailwind-CSS.git)
+   cd JobPortal-Frontend-With-React-Vite-And-Tailwind-CSS
