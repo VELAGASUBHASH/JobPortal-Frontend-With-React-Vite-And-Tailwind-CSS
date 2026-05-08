@@ -347,17 +347,22 @@ function ApplicationsPanel({ job, onClose }) {
         fetch();
     }, [job]);
 
-    const updateStatus = async (id, status) => {
-        setUpdating(id);
+    const updateStatus = async (appId, status) => {
+        setUpdating(appId);
         try {
-            // ✅ Uses adminAppAPI.updateStatus()
-            await adminAppAPI.updateStatus(id, status);
-            setApps(prev => prev.map(a => appId(a) === id ? { ...a, applicationStatus: status } : a));
-            setToast({ msg: `Updated to ${status}`, type: "success" });
-        } catch (err) {
-            console.error("Status update failed:", err);
-            setToast({ msg: "Failed to update status", type: "error" });
-        } finally { setUpdating(null); }
+            let backendStatus = status;
+            if (status === "SHORTLISTED") backendStatus = "INPROCESS";
+            if (status === "HIRED") backendStatus = "APPROVED";
+
+
+            await api.put(`/admin/Application/${appId}?status=${backendStatus}`);
+            
+            setApps(prev => prev.map(a => a.id === appId ? { ...a, applicationStatus: status } : a));
+            setToast({ msg: `Status updated to ${status}`, type: "success" });
+        } catch { 
+            setToast({ msg: "Failed to update", type: "error" }); 
+        }
+        finally { setUpdating(null); }
     };
 
     const filtered = apps.filter(a =>
