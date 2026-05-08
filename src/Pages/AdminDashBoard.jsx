@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { adminJobAPI, adminAppAPI } from "../Services/api.js";
+import { api, adminJobAPI, adminAppAPI } from "../Services/api.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STATUS_OPTS = ["APPLIED", "SHORTLISTED", "HIRED", "REJECTED"];
