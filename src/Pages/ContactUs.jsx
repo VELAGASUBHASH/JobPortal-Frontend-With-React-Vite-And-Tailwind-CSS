@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ContactUs() {
     const [visible, setVisible] = useState(false);
@@ -46,14 +46,22 @@ export default function ContactUs() {
                         ))}
                     </div>
 
-                    {/* Google Form Placeholder */}
-                    <div className="lg:col-span-2 bg-gradient-to-br from-[#12142b]/95 to-[#0e1022]/95 border border-indigo-500/20 rounded-3xl p-8 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-                        <div className="w-full h-[500px] bg-[#07080f]/50 border border-slate-700/50 rounded-2xl flex flex-col items-center justify-center text-center p-6 border-dashed">
-                            <span className="text-4xl mb-4">📋</span>
-                            <h3 className="text-white font-bold text-lg mb-2" style={{ fontFamily: "'Syne',sans-serif" }}>Google Form Embed Area</h3>
-                            <p className="text-slate-500 text-sm max-w-md">
-                                Replace this entire div container with your Google Form iframe code when you are ready. The dark background will perfectly frame your form.
-                            </p>
+                    {/* Google Form Iframe Container */}
+                    <div className="lg:col-span-2 bg-gradient-to-br from-[#12142b]/95 to-[#0e1022]/95 border border-indigo-500/20 rounded-3xl p-4 sm:p-8 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+                        <div className="w-full h-[600px] rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center">
+                            <iframe 
+                                /* Replace the src below with your long Google Form Embed URL if it refuses to connect */
+                                src="https://forms.gle/F4bUJL7Wngw2argX9" 
+                                width="100%" 
+                                height="100%" 
+                                frameBorder="0" 
+                                marginHeight="0" 
+                                marginWidth="0"
+                                className="w-full h-full border-none"
+                                title="Contact Form"
+                            >
+                                Loading…
+                            </iframe>
                         </div>
                     </div>
 
